@@ -1,16 +1,55 @@
+# from dash import Dash, dcc, html
+
+# app = Dash(__name__)
+
+# app.layout = html.Div([
+#     dcc.Slider(0, 9, marks={i: f'Label{i}' for i in range(10)}, value=0)
+# ])
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
+# for checklist 
+# from dash import Dash, dcc, html
+
+# app = Dash(__name__)
+
+# app.layout = html.Div([
+#     dcc.Checklist( 
+#         ['New York City', 'Montréal', 'San Francisco'],
+#         ['Montréal', 'San Francisco'],
+#     )
+# ])
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
+# from dash import Dash, dcc, html
+
+# app = Dash(__name__)
+
+# app.layout = html.Div([
+#     dcc.Checklist( 
+#         ['New York City', 'Montréal', 'San Francisco'],
+#         ['Montréal', 'San Francisco'],
+#         inline=True   # to show checklist items in a row
+#     )
+# ])
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
+
+import pandas as pd
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
-import pandas as pd
-import json
-import os
 
-# Load JSON data from a file
-def load_data():
-    # Replace this with the actual loading mechanism if data.json is not present
-   return json.loads('''
-                     [
+# Your demographic data
+data = [
     {
         "State": "Alabama",
         "White (%)": 65.0,
@@ -1013,24 +1052,36 @@ def load_data():
     }
 ]
 
-                     ''')
-
-
-data = load_data()
+# Convert data to DataFrame
 df = pd.DataFrame(data)
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
 
-# App layout
+# Define the layout of the app
 app.layout = html.Div(children=[
-    html.H1("U.S. Demographics Dashboard", className='dashboard-title'),
-    dcc.Dropdown(
-        id='state-dropdown',
-        options=[{'label': state, 'value': state} for state in df['State'].unique()],
-        value='Alabama',
-        clearable=False,
-        className='dropdown'
+    html.H1("U.S. Demographics Dashboard", className='dashboard-title', style={'textAlign': 'center','color': '#E6E6FA'}),
+    
+    html.Div(
+        children=[
+            dcc.Dropdown(
+                id='state-dropdown',
+                options=[{'label': state, 'value': state} for state in df['State'].unique()],
+                value='Connecticut',  # Default value
+                clearable=False,
+                className='dropdown',
+                style={'width': '300px', 'margin': '0 auto'}  # Set width and center it
+            )
+        ],
+        style={
+            'display': 'flex',
+            'justifyContent': 'center',
+            'alignItems': 'center',
+            'width': '100%',
+            'height': '100px',
+            'margin': 'auto',
+            'padding': '20px'
+        }
     ),
     html.Div(style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'space-around'}, children=[
         html.Div(className='card', children=[dcc.Graph(id='demographics-bar-graph', style={'height': '300px'})], style={'width': '45%', 'margin': '20px'}),
@@ -1059,78 +1110,86 @@ app.layout = html.Div(children=[
     Input('state-dropdown', 'value')
 )
 def update_graphs(selected_state):
-    filtered_df = df[df['State'] == selected_state].iloc[0]
+    try:
+        filtered_df = df[df['State'] == selected_state].iloc[0]
 
-    # Bar graph
-    bar_fig = px.bar(
-        x=filtered_df.index[1:],  # Skip 'State' for x-axis
-        y=filtered_df.values[1:],  # Skip 'State' for y values
-        labels={'x': 'Demographic Group', 'y': 'Percentage'},
-        title=f'Demographic Distribution in {selected_state}',
-        template='plotly_dark'
-    )
+        # Bar graph
+        bar_fig = px.bar(
+            x=filtered_df.index[1:],  # Skip 'State' for x-axis
+            y=filtered_df.values[1:],  # Skip 'State' for y values
+            labels={'x': 'Demographic Group', 'y': 'Percentage'},
+            title=f'Demographic Distribution in {selected_state}',
+            template='plotly_dark'
+        )
 
-    # Pie chart
-    pie_fig = px.pie(
-        names=filtered_df.index[1:],
-        values=filtered_df.values[1:],
-        title=f'Demographic Distribution in {selected_state}',
-        template='plotly_dark'
-    )
+        # Pie chart
+        pie_fig = px.pie(
+            names=filtered_df.index[1:],
+            values=filtered_df.values[1:],
+            title=f'Demographic Distribution in {selected_state}',
+            template='plotly_dark'
+        )
 
-    # Scatter plot (Mobile Phone Users vs Crime Rate)
-    scatter_fig = px.scatter(
-        df, x='Mobile Phone Users', y='Crime Rate (per 100k)', 
-        title='Scatter Plot: Mobile Phone Users vs Crime Rate',
-        hover_name='State', template='plotly_dark'
-    )
+        # Scatter plot (Mobile Phone Users vs Crime Rate)
+        scatter_fig = px.scatter(
+            df, x='Mobile Phone Users', y='Crime Rate (per 100k)', 
+            title='Scatter Plot: Mobile Phone Users vs Crime Rate',
+            hover_name='State', template='plotly_dark'
+        )
 
-    # Line plot (Female Population vs Total Population)
-    line_fig = px.line(
-        df, x='State', y='Female Population (%)',
-        title='Line Plot of Female Population (%) by State',
-        template='plotly_dark'
-    )
+        # Line plot (Female Population vs Total Population)
+        line_fig = px.line(
+            df, x='State', y='Female Population (%)',
+            title='Line Plot of Female Population (%) by State',
+            template='plotly_dark'
+        )
 
-    # Box plot (Students distribution)
-    box_fig = px.box(
-        df, y='Students',
-        title='Box Plot of Student Population Distribution',
-        template='plotly_dark'
-    )
+        # Box plot (Students distribution)
+        box_fig = px.box(
+            df, y='Schools', x='State',
+            title='Box Plot of Student Population Distribution',
+            template='plotly_dark'
+        )
 
-    # Histogram (Total Population distribution)
-    histogram_fig = px.histogram(
-        df, x='Total Population',
-        title='Histogram of Total Population Distribution',
-        template='plotly_dark'
-    )
+        # Histogram (Total Population distribution)
+        histogram_fig = px.histogram(
+            df, x='State', y='Women Age 50+',
+            title='Histogram of Total Population Distribution',
+            template='plotly_dark'
+        )
 
-    # Area Chart
-    area_fig = px.area(
-        df, x='State', y='Total Population',
-        title='Area Chart of Total Population by State',
-        template='plotly_dark'
-    )
+        # Area Chart
+        area_fig = px.area(
+            df, x='State', y='Total Population',
+            title='Area Chart of Total Population by State',
+            template='plotly_dark'
+        )
 
-    # Bubble Chart
-    bubble_fig = px.scatter(
-        df, x='Mobile Phone Users', y='Total Population', size='Students',
-        title='Bubble Chart: Total Population vs Mobile Phone Users',
-        hover_name='State', template='plotly_dark'
-    )
+        # Bubble Chart
+        bubble_fig = px.scatter(
+            df, x='Mobile Phone Users', y='Total Population', size='Students',
+            title='Bubble Chart: Total Population vs Mobile Phone Users',
+            hover_name='State', template='plotly_dark'
+        )
 
-    # Radar Chart (Example for specific demographics)
-    radar_fig = px.line_polar(
-        df, r=filtered_df[['White (%)', 'Black (%)', 'Indian (%)', 'Asian (%)', 'Others (%)']].values,
-        theta=['White (%)', 'Black (%)', 'Indian (%)', 'Asian (%)', 'Others (%)'],
-        title='Radar Chart of Racial Distribution in ' + selected_state,
-        template='plotly_dark'
-    )
+        # Radar Chart (Example for specific demographics)
+        radar_fig = px.line_polar(
+            df, r=filtered_df[['White (%)', 'Black (%)', 'Indian (%)', 'Asian (%)', 'Others (%)']].values,
+            theta=['White (%)', 'Black (%)', 'Indian (%)', 'Asian (%)', 'Others (%)'],
+            title='Radar Chart of Racial Distribution in ' + selected_state,
+            template='plotly_dark'
+        )
 
-    return bar_fig, pie_fig, scatter_fig, line_fig, box_fig, histogram_fig, area_fig, bubble_fig, radar_fig
+        return bar_fig, pie_fig, scatter_fig, line_fig, box_fig, histogram_fig, area_fig, bubble_fig, radar_fig
 
+    except Exception as e:
+        # Handle errors here (e.g., no data for the selected state)
+        print(f"Error: {e}")
+        return {}, {}, {}, {}, {}, {}, {}, {}, {}
 
 # Run the app
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+
+
